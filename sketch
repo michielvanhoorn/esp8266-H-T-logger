@@ -1,0 +1,110 @@
+/**** developer notes / work in progress
+ *  This is an updated version of the ESP8266 Humidity and Temperature monitor.
+ *  The previous version was not working properly because of DHT22 library issues for ESP8266
+ *  
+ *  ESP8266 DHT Library: DHT Library from https://github.com/beegee-tokyo/DHTesp
+ *  ESP8266 PCD8544 library from https://github.com/bbx10/Adafruit-PCD8544-Nokia-5110-LCD-library/tree/esp8266
+ */
+
+
+
+
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
+#include "DHTesp.h"
+
+
+/*********************************************************************
+Using modified version of Adafruit's PCD8544 library.
+https://github.com/bbx10/Adafruit-PCD8544-Nokia-5110-LCD-library/tree/esp8266
+
+Inspired onf bbx10 (https://github.com/bbx10) work and improved for NodeMCU.
+
+== Display Connection ==
+
+USB TTL     Node      Nokia 5110  Description
+            MCU     PCD8544
+
+            GND         GND         Ground
+            3V          VCC         3.3V from NodeMCU to display
+            D5          CLK         Output from ESP SPI clock
+            D7          DIN         Output from ESP SPI MOSI to display data input
+            D6          D/C         Output from display data/command to ESP
+            D1          CS          Output from ESP to chip select/enable display
+            D2          RST         Output from ESP to reset display
+            15          LED         3.3V to turn backlight on, GND off
+
+GND (blk)   GND                     Ground
+5V  (red)   V+                      5V power from PC or charger
+TX  (green) RX                      Serial data from IDE to ESP
+RX  (white) TX                      Serial data to ESP from IDE
+*********************************************************************/
+
+Adafruit_PCD8544 display = Adafruit_PCD8544(12, 5, 4);
+
+DHTesp dht;
+
+    
+void setup()   {
+    Serial.begin(9600);
+    while (!Serial) {
+      ; // wait for serial port to connect. Needed for native USB port only
+     }
+
+  dht.setup(0, DHTesp::DHT22); // Connect ESP8266 D3 / GPIO 0 port for DHT data line
+  
+  display.begin();
+  display.clearDisplay(); //
+  display.display();
+
+  
+  // you can change the contrast around to adapt the display
+  // for the best viewing!
+  display.setContrast(50);
+  display.setRotation(2);
+  display.clearDisplay();
+  
+             
+  display.setCursor(0,10);
+  display.println("Running");
+  display.display();
+
+delay(5000);
+  
+  
+}
+
+
+void loop() {
+
+  delay(dht.getMinimumSamplingPeriod());
+
+   display.setRotation(2);
+     display.clearDisplay();
+     display.setTextColor(WHITE, BLACK); // 'inverted' text
+     display.setCursor(0,0);
+     display.println("   Monitor   ");
+     display.setTextColor(BLACK);
+
+     String temp = "T=";
+     temp += String(dht.getTemperature());
+     temp += char(247);
+     temp += "C";
+     display.setTextSize(1);
+     display.setCursor(0,10);
+     display.println(temp);
+     display.setTextSize(1);
+
+     String hum = "H=";
+     hum += String(dht.getHumidity());
+     hum += "%";
+     display.setCursor(0,20);
+     display.println(hum);
+
+
+     display.display();
+
+    delay(5000);
+
+}
